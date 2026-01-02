@@ -3,8 +3,8 @@
   <PropertyGroup>
     <ModName>ChickenSitReloaded</ModName>
     <ModType>code</ModType>
-    <ModVersion>1.0.0</ModVersion>
-    <ModId>ChickenSitReloaded</ModId>
+    <ModVersion>1.1.0</ModVersion>
+    <ModId>chickensitreloaded</ModId>
     <Description>Animals don't flee the player after generation 1</Description>
     <Side>universal</Side>
     <RequiredOnClient>true</RequiredOnClient>
@@ -60,7 +60,7 @@
 
   <!-- Project item includes -->
   <ItemGroup>
-    <Folder Include="resources\assets\DomesticAnimalsDontFlee" />
+    <Folder Include="resources\assets\chickensitreloaded\" />
   </ItemGroup>
 
   <!-- Formatting JSON files -->
