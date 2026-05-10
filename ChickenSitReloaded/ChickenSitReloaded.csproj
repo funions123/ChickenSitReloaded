@@ -3,9 +3,9 @@
   <PropertyGroup>
     <ModName>ChickenSitReloaded</ModName>
     <ModType>code</ModType>
-    <ModVersion>1.1.0</ModVersion>
+    <ModVersion>1.1.1</ModVersion>
     <ModId>chickensitreloaded</ModId>
-    <Description>Animals don't flee the player after generation 1</Description>
+    <Description>Prevents animals from fleeing the player after a configurable generation</Description>
     <Side>universal</Side>
     <RequiredOnClient>true</RequiredOnClient>
     <RequiredOnServer>true</RequiredOnServer>
@@ -23,7 +23,7 @@
 
   <!-- Project settings -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ImplicitUsings>enable</ImplicitUsings>
