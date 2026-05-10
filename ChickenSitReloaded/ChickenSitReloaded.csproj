@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ModName>ChickenSitReloaded</ModName>
     <ModType>code</ModType>
-    <ModVersion>1.1.1</ModVersion>
+    <ModVersion>1.1.2</ModVersion>
     <ModId>chickensitreloaded</ModId>
     <Description>Prevents animals from fleeing the player after a configurable generation</Description>
     <Side>universal</Side>

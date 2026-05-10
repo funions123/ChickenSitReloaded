@@ -1,10 +1,11 @@
-﻿using HarmonyLib;
+using HarmonyLib;
+using System.Collections.Generic;
 using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Server;
 using Vintagestory.GameContent;
 
 namespace ChickenSitReloaded;
+
 public class AiBehaviorPatch : ModSystem
 {
     private Harmony _patcher;
@@ -13,10 +14,19 @@ public class AiBehaviorPatch : ModSystem
 
     public static ChickenSitReloadedConfig Config { get; private set; }
 
-    public static HashSet<string> AllowedEntityPaths = new HashSet<string>
+    // animals in this dict are considered active and the patch is applied to them
+    public static Dictionary<string, int> ActivePrefixes { get; private set; } = new();
+
+    private const string ConfigFileName = "ChickenSitReloadedConfig.json";
+
+    // map modid to animal prefixes
+    private static readonly Dictionary<string, string> ModRequirements = new()
     {
-        "chicken",
-        "goat"
+        { "capercaillie",   "moreanimals" },
+        { "goldenpheasant", "moreanimals" },
+        { "pheasant",       "moreanimals" },
+        { "wildturkey",     "moreanimals" },
+        { "bovinae",        "bovinae"     },
     };
 
     public override void StartServerSide(ICoreServerAPI api)
@@ -26,7 +36,7 @@ public class AiBehaviorPatch : ModSystem
 
         try
         {
-            Config = api.LoadModConfig<ChickenSitReloadedConfig>("ChickenSitReloadedConfig.json");
+            Config = api.LoadModConfig<ChickenSitReloadedConfig>(ConfigFileName);
         }
         catch
         {
@@ -35,28 +45,26 @@ public class AiBehaviorPatch : ModSystem
 
         if (Config == null)
         {
-            // rewrite default config if old one not found or corrupted
             Config = new ChickenSitReloadedConfig();
-            api.StoreModConfig(Config, "ChickenSitReloadedConfig.json");
+            api.StoreModConfig(Config, ConfigFileName);
         }
 
-        if (api.ModLoader.IsModEnabled("moreanimals"))
+        // add animals to the active dict based on which mods are installed
+        ActivePrefixes = new Dictionary<string, int>();
+        foreach (var kvp in Config.AnimalMinimumGeneration)
         {
-            api.Logger.Notification("ChickenSitReloaded: 'More Animals' detected. Enabling compatibility.");
-            AllowedEntityPaths.Add("capercaillie");
-            AllowedEntityPaths.Add("goldenpheasant");
-            AllowedEntityPaths.Add("pheasant");
-            AllowedEntityPaths.Add("wildturkey");
+            if (ModRequirements.TryGetValue(kvp.Key, out string requiredMod))
+            {
+                if (api.ModLoader.IsModEnabled(requiredMod))
+                    ActivePrefixes[kvp.Key] = kvp.Value;
+            }
+            else
+            {
+                ActivePrefixes[kvp.Key] = kvp.Value;
+            }
         }
 
-        if (api.ModLoader.IsModEnabled("bovinae"))
-        {
-            api.Logger.Notification("ChickenSitReloaded: 'Fauna of the Stone Age: Bovinae' detected. Enabling compatibility.");
-            AllowedEntityPaths.Add("bovinae");
-        }
-         
         _patcher.PatchAll();
-
     }
 
     public override void AssetsFinalize(ICoreAPI api)
@@ -72,6 +80,7 @@ public class AiBehaviorPatch : ModSystem
         _patcher?.UnpatchAll(Mod.Info.ModID);
         base.Dispose();
     }
+
 }
 
 
@@ -82,32 +91,18 @@ public static class DomesticationPatches
     [HarmonyPostfix]
     public static void ShouldExecutePostfix(AiTaskFleeEntity __instance, ref bool __result)
     {
-        if (!__result || __instance.entity == null) return;
+        if (!__result || __instance.entity == null || __instance.targetEntity is not EntityPlayer) return;
 
-        Entity entity = __instance.entity;
-        if (entity == null) return;
-
-        string path = entity.Code.Path;
-        bool isTargetAnimal = false;
-        foreach (var allowed in AiBehaviorPatch.AllowedEntityPaths)
+        string path = __instance.entity.Code.Path;
+        foreach (var kvp in AiBehaviorPatch.ActivePrefixes)
         {
-            if (path.StartsWith(allowed))
+            if (path.StartsWith(kvp.Key))
             {
-                isTargetAnimal = true;
-                break;
+                int generation = __instance.entity.WatchedAttributes.GetInt("generation", 0);
+                if (generation >= kvp.Value) __result = false;
+                return;
             }
-        }
-
-        if (!isTargetAnimal) return;
-
-        int generation = entity.WatchedAttributes.GetInt("generation", 0);
-        if (generation < AiBehaviorPatch.Config.MinimumGeneration) return;
-
-        Entity target = __instance.targetEntity;
-
-        if (target is EntityPlayer)
-        {
-            __result = false;
         }
     }
 }
+
